@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="{{ 'sr-Latn' if lang == 'sr' else lang }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Engineering Documentation{% endblock %} · GASTRANS</title>
+<link rel="icon" href="/static/gastrans_docs.ico" sizes="any"><link rel="icon" type="image/png" href="/static/gastrans_docs.png"><link rel="stylesheet" href="/static/portal.css">
+{% block head %}{% endblock %}
+</head><body data-page="{% block page %}{% endblock %}" data-lang="{{lang}}">
+<header class="top"><div class="brand"><a class="logo" href="/" title="GASTRANS"><img src="/static/GST.png" alt="GASTRANS"></a><div>{% block brand %}<h1>Engineering Documentation</h1>{% endblock %}</div></div>
+<div class="head-right">{% block head_right %}{% endblock %}
+<div class="lang-switch" id="langSwitch"><button class="head-link lang-btn" type="button" aria-haspopup="true" title="{{ t('lang_choose') }}"><img src="/static/flags/{{lang}}.svg" alt="">{{ lang|upper if lang != 'sr' else 'SR' }} ▾</button>
+<div class="lang-menu" role="menu">{% for code in langs %}<a role="menuitem" href="/lang/{{code}}" class="{{ 'active' if code == lang }}"><img src="/static/flags/{{code}}.svg" alt="">{{ lang_names[code] }}</a>{% endfor %}</div></div>
+</div></header>
+{% block content %}{% endblock %}
+<script>window.I18N = {{ js_i18n|tojson }}; window.PORTAL = {{ portal_cfg|tojson }};</script>
+<script src="/static/portal.js"></script>
+{% block scripts %}{% endblock %}
+</body></html>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block page %}view{% endblock %}
+{% block title %}{{doc.doc_name}}{% endblock %}
+{% block head %}<style>
+html,body{height:100%}body{display:flex;flex-direction:column}
+header.top{padding:9px 18px}.brand h1{font-size:17px;overflow-wrap:anywhere}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 18px;background:#fff;border-bottom:1px solid var(--line)}
+.bar .path{font-size:12px;color:var(--muted);overflow-wrap:anywhere;min-width:0;flex:1}
+.descbar{padding:8px 18px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;font-size:13px;white-space:pre-wrap}
+main{flex:1;min-height:0;padding:10px 18px 14px;display:flex}main .preview{flex:1;min-height:0}
+</style>{% endblock %}
+{% block brand %}<h1>{% if doc.title_source == 'siemens' %}<span class="src siemens">SIM</span>{% elif doc.title_source == 'content' %}<span class="src content">{{ t('src_content_short') }}</span>{% elif doc.title_source == 'approved' %}<span class="src approved">✓</span>{% endif %}{{doc.doc_name}}</h1><div class="sub">{{doc.name}}</div>{% endblock %}
+{% block head_right %}{% include "_user_header.html" %}<a class="head-link" href="/">← {{ t('catalog') }}</a>{% endblock %}
+{% block content %}
+<div class="bar"><div class="actions" id="actions"></div><div class="path" id="docPath">{{doc.unc}}</div></div>
+{% if doc.description %}<div class="descbar">{{doc.description}}</div>{% endif %}
+<main><div class="preview" id="box"></div></main>
+{% endblock %}
+{% block scripts %}<script>
+const doc = {{ doc|tojson }};
+const actions = document.getElementById('actions');
+actions.innerHTML = Portal.actionsHtml(doc, {noOpen: true, extra: '<a class="btn" href="/document?path=' + encodeURIComponent(doc.path) + '">ⓘ ' + Portal.T('properties') + '</a>'});
+Portal.bindActions(actions, doc);
+Portal.startPresence(); Portal.setCurrentDoc(doc.doc_name || doc.name);
+Portal.log('open', doc);
+Portal.preview(document.getElementById('box'), doc, {nolog: true});
+document.getElementById('docPath').textContent = Portal.unc(doc);
+const movedFrom = {{ moved_from|tojson }};
+if (movedFrom) Portal.api('/api/moves/for?path=' + encodeURIComponent(doc.path)).then(r => r.json()).then(d => Portal.movedNotice(d.items.filter(m => !m.undone_at).slice(-1)));
+</script>{% endblock %}

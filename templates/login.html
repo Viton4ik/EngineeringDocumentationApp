@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block page %}login{% endblock %}
+{% block title %}{{ t('admin_login') }}{% endblock %}
+{% block head %}<style>.login{max-width:380px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px}.login h2{margin:0 0 14px;font-size:19px}.login label{display:block;font-size:13px;color:var(--muted);margin-top:10px}.login input{width:100%;margin-top:4px}.login button{width:100%;justify-content:center;margin-top:18px}.login .err{margin-top:12px}</style>{% endblock %}
+{% block brand %}<h1>{{ t('admin_panel') }}</h1><div class="sub">{{host}}</div>{% endblock %}
+{% block head_right %}<a class="head-link" href="/">← {{ t('catalog') }}</a>{% endblock %}
+{% block content %}
+<form class="login" method="post"><h2>🔐 {{ t('admin_login') }}</h2>
+<label>{{ t('username') }}<input name="username" value="admin" autocomplete="username" {{ 'disabled' if disabled }}></label>
+<label>{{ t('password') }}<input name="password" type="password" autocomplete="current-password" autofocus {{ 'disabled' if disabled }}></label>
+<button class="primary" type="submit" {{ 'disabled' if disabled }}>{{ t('sign_in') }}</button>
+{% if error %}<div class="err">{{error}}</div>{% endif %}
+<div class="small" style="margin-top:14px">{{ t('login_http_note') }}</div></form>
+{% endblock %}

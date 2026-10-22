@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page %}catalog{% endblock %}
+{% block head %}<style>
+main{padding:14px 16px;max-width:1950px;margin:auto}
+.toolbar,.filters,.treebox{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar input{flex:1;min-width:230px}
+.filters{display:grid;grid-template-columns:repeat(7,minmax(115px,1fr));gap:9px}.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.field select,.field input{width:100%}
+.status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:2px 0 8px}
+.titles-progress{color:#1e40af}
+.layout{display:grid;grid-template-columns:215px minmax(420px,1.3fr) minmax(380px,1fr);gap:12px;align-items:start}
+.treebox{position:sticky;top:8px;max-height:calc(100vh - 20px);overflow:auto}.treebox h2,.side h2{font-size:15px;margin:0 0 8px}
+.tree button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:6px 5px;font-size:12px;overflow-wrap:anywhere;white-space:normal}.tree button:hover,.tree button.active{background:#e4effa;color:#154c78}.tree-count{float:right;color:#94a3b8}
+.table-wrap{overflow:auto;max-height:calc(100vh - 230px);min-height:300px;border:1px solid var(--line);border-radius:9px;background:#fff}
+table.files{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
+table.files th{position:sticky;top:0;background:#e5edf4;text-align:left;z-index:1;color:#334155}table.files th,table.files td{padding:7px 8px;border-bottom:1px solid #e8edf2}
+table.files th button{padding:0;border:0;background:none;font-weight:700;color:inherit;font-size:12px}
+table.files tbody tr{cursor:pointer;user-select:none}table.files tbody tr:hover{background:#f0f7ff}table.files tbody tr.selected{background:#dbeafe}
+td.chk,th.chk{width:26px;padding-right:0}tr.checked{background:#fef9c3}.selbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;margin-bottom:8px}.selbar[hidden],.movedbar[hidden]{display:none}.movedbar{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;border-radius:10px;padding:7px 12px;margin-bottom:8px;font-size:13px}
+td.filename{max-width:250px;overflow:hidden;text-overflow:ellipsis}td.ico{width:20px;padding-right:0;font-size:14px}
+.row-open{border:0;background:transparent;color:var(--accent);font-weight:700;padding:2px 8px;font-size:14px;visibility:hidden}
+tr:hover .row-open,tr.selected .row-open{visibility:visible}.row-open:hover{background:#dbeafe}
+.star{padding:1px 5px;border:0;background:transparent}.fav{color:#b7791f}
+.empty{padding:28px;text-align:center;color:var(--muted);white-space:normal}
+.side{position:sticky;top:8px;height:calc(100vh - 20px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;gap:8px}
+.side h2{margin:0;overflow-wrap:anywhere}.side .meta{font-size:12px;color:var(--muted);word-break:break-word;line-height:1.55}
+.side .preview{flex:1;min-height:200px}
+@media(max-width:1300px){.layout{grid-template-columns:190px minmax(350px,1fr)}.side{grid-column:1/-1;position:static;height:80vh}.filters{grid-template-columns:repeat(4,minmax(110px,1fr))}}
+@media(max-width:760px){main{padding:8px}.layout{grid-template-columns:1fr}.treebox{position:static;max-height:220px}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.credit{text-align:left}}
+</style>{% endblock %}
+{% block brand %}<h1>Engineering Documentation</h1><div class="sub">{{ t('catalog_sub') }} · {{ t('server') }}: {{host}} · {{ t('root') }}: {{root}}</div>{% endblock %}
+{% block head_right %}{% include "_user_header.html" %}
+<button class="head-link accent" id="submitBtn" type="button">➕ {{ t('submit_doc') }}</button>
+<span class="head-link" title="{{ t('online_title') }}">{{ t('online') }}: <b id="online">—</b></span>
+<a class="head-link" href="/admin">🔐 {{ t('admin_panel') }}</a>
+<div class="credit"><div>Created by <b>Victor Vetoshkin</b></div><div>{{ t('scanned') }}: <span id="created">{{scanned_at}}</span> · Siemens: <span id="simcount">…</span></div></div>{% endblock %}
+{% block content %}
+<main>{% if error %}<div class="panel" style="color:#991b1b">{{error}}</div>{% endif %}
+<div class="toolbar"><input id="search" placeholder="{{ t('search_ph') }}"><button class="primary" id="refresh">↻ {{ t('rescan') }}</button><button id="favoritesOnly">☆ {{ t('favorites') }}</button><button id="clear">{{ t('reset_filters') }}</button><button id="export">{{ t('export_csv') }}</button></div>
+<div class="filters">
+<div class="field"><label>{{ t('f_type') }}</label><select id="ext"><option value="">{{ t('all_types') }}</option></select></div><div class="field"><label>{{ t('f_documentation') }}</label><select id="documentation"><option value="">{{ t('all') }}</option></select></div><div class="field"><label>RFQ</label><select id="rfq"><option value="">{{ t('all') }}</option></select></div><div class="field"><label>{{ t('f_system') }}</label><select id="system"><option value="">{{ t('all') }}</option></select></div><div class="field"><label>UNIT</label><select id="unit"><option value="">{{ t('all') }}</option></select></div><div class="field"><label>{{ t('f_changed_after') }}</label><input id="dateFrom" type="date"></div><div class="field"><label>{{ t('f_min_size') }}</label><input id="minSize" type="number" min="0" step=".1" placeholder="0"></div>
+</div><div class="selbar" id="selBar" hidden><b id="selCount"></b><button class="primary" id="selMove"></button><button id="selAll">{{ t('select_all_shown') }}</button><button id="selClear">{{ t('clear_selection') }}</button></div>
+<div class="movedbar" id="movedBar" hidden></div>
+<div class="status"><span id="shown">{{ t('loading') }}</span><span class="titles-progress" id="titlesProgress"></span><span>{{ t('updated') }}: <span id="updated">{{scanned_at}}</span></span></div>
+<div class="layout"><section class="treebox"><h2>{{ t('tree') }}</h2><div class="small">{{ t('tree_hint') }}</div><div class="tree" id="tree"></div></section>
+<div class="table-wrap"><table class="files"><thead><tr><th class="chk"></th><th>☆</th><th><button data-sort="documentation">{{ t('f_documentation') }} ↕</button></th><th><button data-sort="rfq">RFQ ↕</button></th><th><button data-sort="system">{{ t('f_system') }} ↕</button></th><th><button data-sort="unit">UNIT ↕</button></th><th></th><th><button data-sort="name">{{ t('col_file') }} ↕</button></th><th><button data-sort="doc_name">Document name ↕</button></th><th><button data-sort="size">{{ t('col_size') }} ↕</button></th><th><button data-sort="modified">{{ t('col_modified') }} ↕</button></th><th></th></tr></thead><tbody id="rows"><tr><td colspan="12" class="empty">{{ t('loading') }}</td></tr></tbody></table></div>
+<aside class="side" id="side"><h2 id="preview-title">{{ t('preview_title') }}</h2><div class="actions" id="preview-actions"></div><div id="preview-meta" class="meta">{{ t('preview_hint')|safe }}</div><div id="preview-content" class="preview" style="display:none"></div></aside></div>
+</main>{% endblock %}
+{% block scripts %}
+<script>window.UPLOAD = {max: {{upload_max}}, allowed: {{ allowed|tojson }}}; window.IS_ADMIN = {{ is_admin|tojson }};</script>
+<script src="/static/catalog.js"></script>
+{% endblock %}
