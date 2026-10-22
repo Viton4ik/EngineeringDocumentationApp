@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block page %}admin{% endblock %}
+{% block title %}{{ t('admin_panel') }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/admin.css">{% endblock %}
+{% block brand %}<h1>{{ t('admin_panel') }}</h1><div class="sub">{{host}} · {{root}}</div>{% endblock %}
+{% block head_right %}
+<span class="head-link" title="{{ t('write_mode_hint') if can_approve else t('sub_err_server_only') }}">{{ '🖥 ' + t('on_server_pc') if is_server else '🌐 ' + t('remote_pc') }}</span>
+<a class="head-link" href="/">← {{ t('catalog') }}</a><a class="head-link" href="/admin/logout">⎋ {{ t('logout') }}</a>{% endblock %}
+{% block content %}
+<main class="adm">
+{% if unc_admin_share or not soffice or not ffmpeg or not pillow or not defender %}<div class="warnbox">
+{% if unc_admin_share %}⚠ {{ t('warn_share', host=host, root=root)|safe }}<br>{% endif %}
+{% if not soffice %}⚠ {{ t('warn_lo')|safe }}<br>{% endif %}
+{% if not ffmpeg %}⚠ {{ t('warn_ffmpeg')|safe }}<br>{% endif %}
+{% if not pillow %}⚠ {{ t('warn_pillow')|safe }}<br>{% endif %}
+{% if not defender %}⚠ {{ t('warn_defender')|safe }}{% endif %}
+</div>{% endif %}
+<div class="cards" id="cards">
+<button class="card c-orange" data-go="subs" data-filter="pending"><span class="cv" id="cPending">—</span><span class="cl">{{ t('card_pending') }}</span></button>
+<button class="card c-blue" data-go="subs" data-filter="resubmitted"><span class="cv" id="cResub">—</span><span class="cl">{{ t('card_resubmitted') }}</span></button>
+<button class="card c-purple" data-go="msgs"><span class="cv" id="cMsgs">—</span><span class="cl">{{ t('card_messages') }}</span></button>
+<button class="card c-red" data-go="log" data-filter="security"><span class="cv" id="cSec">—</span><span class="cl">{{ t('card_security') }}</span></button>
+<button class="card c-green" data-go="subs" data-filter="approved"><span class="cv" id="cApproved">—</span><span class="cl">{{ t('card_approved') }}</span></button>
+<button class="card c-gray" data-go="active"><span class="cv" id="cActive">—</span><span class="cl">{{ t('card_active') }}</span></button>
+</div>
+<nav class="tabs main-tabs" id="tabs">
+<button data-tab="overview" class="active">📊 {{ t('tab_overview') }}</button><button data-tab="active">🟢 {{ t('tab_active') }}</button><button data-tab="devices">👥 {{ t('tab_devices') }}</button>
+<button data-tab="subs">📥 {{ t('tab_subs') }} <b class="badge" id="bSubs" hidden></b></button><button data-tab="msgs">📨 {{ t('tab_msgs') }} <b class="badge" id="bMsgs" hidden></b></button>
+<button data-tab="blocks">⛔ {{ t('tab_blocks') }}</button><button data-tab="log">📜 {{ t('tab_log') }}</button><button data-tab="settings">⚙ {{ t('tab_settings') }}</button></nav>
+
+<section data-pane="overview">
+<div class="filters"><div class="f"><label>{{ t('date_from') }}</label><input type="date" id="ovFrom"></div><div class="f"><label>{{ t('date_to') }}</label><input type="date" id="ovTo"></div>
+<button data-ovrange="6">7 {{ t('days') }}</button><button data-ovrange="29">30 {{ t('days') }}</button><button data-ovrange="89">90 {{ t('days') }}</button><button data-ovrange="364">{{ t('year') }}</button><button class="primary" id="ovApply">{{ t('show') }}</button></div>
+<div class="charts">
+<div class="chart-card span2"><div class="ch-head"><h3>{{ t('ch_activity') }}</h3><button class="tbl-toggle" data-table="activity">{{ t('table') }}</button></div><div class="ch-body"><canvas id="chActivity"></canvas></div><div class="ch-table" id="tActivity" hidden></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_devices') }}</h3><button class="tbl-toggle" data-table="devices">{{ t('table') }}</button></div><div class="ch-body"><canvas id="chDevices"></canvas></div><div class="ch-table" id="tDevices" hidden></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_actions') }}</h3><button class="tbl-toggle" data-table="actions">{{ t('table') }}</button></div><div class="ch-body"><canvas id="chActions"></canvas></div><div class="ch-table" id="tActions" hidden></div></div>
+<div class="chart-card span2"><div class="ch-head"><h3>{{ t('ch_heat') }}</h3></div><div id="heat" class="heat"></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_top_users') }}</h3><button class="tbl-toggle" data-table="users">{{ t('table') }}</button></div><div class="ch-body"><canvas id="chUsers"></canvas></div><div class="ch-table" id="tUsers" hidden></div></div>
+<div class="chart-card span2"><div class="ch-head"><h3>{{ t('ch_top_docs') }}</h3></div><div id="topDocs"></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_os') }}</h3><button class="tbl-toggle" data-table="os">{{ t('table') }}</button></div><div class="ch-body short"><canvas id="chOs"></canvas></div><div class="ch-table" id="tOs" hidden></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_browsers') }}</h3><button class="tbl-toggle" data-table="browsers">{{ t('table') }}</button></div><div class="ch-body short"><canvas id="chBrowsers"></canvas></div><div class="ch-table" id="tBrowsers" hidden></div></div>
+<div class="chart-card"><div class="ch-head"><h3>{{ t('ch_sub_status') }}</h3><button class="tbl-toggle" data-table="substatus">{{ t('table') }}</button></div><div class="ch-body short"><canvas id="chSubStatus"></canvas></div><div class="ch-table" id="tSubstatus" hidden></div></div>
+</div></section>
+
+<section data-pane="active" hidden><div class="panel"><h2>{{ t('tab_active') }} <span class="small">{{ t('active_hint') }}</span></h2>
+<div class="tw"><table><thead><tr><th>{{ t('col_employee') }}</th><th>{{ t('col_pc') }}</th><th>IP</th><th>{{ t('col_os') }}</th><th>{{ t('col_browser') }}</th><th>{{ t('col_since') }}</th><th>{{ t('col_signal') }}</th><th>{{ t('col_viewing') }}</th><th></th></tr></thead><tbody id="activeRows"></tbody></table></div>
+<div class="small" style="margin-top:6px">{{ t('identity_note') }}</div></div></section>
+
+<section data-pane="devices" hidden><div class="panel"><h2>{{ t('tab_devices') }}</h2>
+<div class="filters"><input id="devQ" placeholder="{{ t('dev_search_ph') }}"><button id="devNewMsg">✉ {{ t('new_message') }}</button></div>
+<div class="tw"><table><thead><tr><th></th><th>{{ t('col_employee') }}</th><th>{{ t('col_pc') }}</th><th>IP</th><th>{{ t('col_os') }}</th><th>{{ t('col_browser') }}</th><th>{{ t('col_screen') }}</th><th>{{ t('col_first') }}</th><th>{{ t('col_last') }}</th><th>{{ t('col_visits') }}</th><th></th></tr></thead><tbody id="devRows"></tbody></table></div></div></section>
+
+<section data-pane="subs" hidden><div class="panel"><h2>{{ t('tab_subs') }}</h2>
+<div class="chips" id="subFilter"><button data-st="" class="active">{{ t('all') }}</button><button data-st="pending">{{ t('st_pending') }}</button><button data-st="resubmitted">{{ t('st_resubmitted') }}</button><button data-st="changes">{{ t('st_changes') }}</button><button data-st="approved">{{ t('st_approved') }}</button><button data-st="rejected">{{ t('st_rejected') }}</button></div>
+<div class="tw"><table><thead><tr><th>#</th><th>{{ t('col_status') }}</th><th>{{ t('fld_title') }}</th><th>{{ t('col_employee') }}</th><th>{{ t('col_pc') }}</th><th>{{ t('col_files') }}</th><th>{{ t('col_target') }}</th><th>{{ t('col_updated') }}</th></tr></thead><tbody id="subRows"></tbody></table></div></div></section>
+
+<section data-pane="msgs" hidden><div class="msg-layout"><div class="panel conv-list"><div class="ch-head"><h2>{{ t('tab_msgs') }}</h2><button id="msgNew">✉ {{ t('new_message') }}</button></div><div id="convs"></div></div>
+<div class="panel conv-thread" id="convThread"><div class="empty-note">{{ t('choose_conversation') }}</div></div></div></section>
+
+<section data-pane="blocks" hidden><div class="panel"><div class="ch-head"><h2>{{ t('tab_blocks') }}</h2><button id="blkAdd">⛔ {{ t('block_manual') }}</button></div>
+<div class="small" style="margin-bottom:8px">{{ t('block_rule') }}</div>
+<div class="tw"><table><thead><tr><th>{{ t('col_status') }}</th><th>{{ t('col_employee') }}</th><th>IP</th><th>{{ t('col_pc') }}</th><th>{{ t('col_browser_id') }}</th><th>{{ t('reason') }}</th><th>{{ t('col_created') }}</th><th>{{ t('blocked_until') }}</th><th></th></tr></thead><tbody id="blkRows"></tbody></table></div></div></section>
+
+<section data-pane="log" hidden><div class="panel"><h2>{{ t('tab_log') }}</h2>
+<div class="filters">
+<div class="f"><label>{{ t('date_from') }}</label><input type="date" id="from"></div><div class="f"><label>{{ t('date_to') }}</label><input type="date" id="to"></div>
+<div class="f"><label>{{ t('col_pc') }}</label><input id="host"></div><div class="f"><label>{{ t('col_employee') }}</label><input id="user"></div><div class="f"><label>IP</label><input id="ip"></div>
+<div class="f"><label>{{ t('col_action') }}</label><select id="action"><option value="">{{ t('all') }}</option></select></div><div class="f"><label>{{ t('col_document') }}</label><input id="q"></div>
+<button data-range="0">{{ t('today') }}</button><button data-range="6">7 {{ t('days') }}</button><button data-range="29">30 {{ t('days') }}</button><button data-range="all">{{ t('all_time') }}</button>
+<button class="primary" id="apply">{{ t('show') }}</button><button id="csv">⤓ CSV</button></div>
+<div class="small" id="total"></div>
+<div class="tw"><table><thead><tr><th>{{ t('col_time') }}</th><th>{{ t('col_pc') }}</th><th>{{ t('col_employee') }}</th><th>IP</th><th>{{ t('col_action') }}</th><th>{{ t('col_document') }}</th><th>{{ t('col_path') }}</th></tr></thead><tbody id="events"></tbody></table></div>
+<div class="pager"><button id="prev">←</button><span id="pageInfo"></span><button id="next">→</button></div></div></section>
+
+<section data-pane="settings" hidden><div class="settings">
+<div class="panel"><h2>🔑 {{ t('change_password') }}</h2><form id="pwForm" class="pwform">
+<label>{{ t('pw_current') }}<input type="password" name="current" autocomplete="current-password" required></label>
+<label>{{ t('pw_new', n=6) }}<input type="password" name="new" minlength="6" autocomplete="new-password" required></label>
+<label>{{ t('pw_confirm') }}<input type="password" name="confirm" minlength="6" autocomplete="new-password" required></label>
+<button class="primary" type="submit">{{ t('save') }}</button><div class="err" id="pwErr"></div></form>
+<div class="small" style="margin-top:10px">{{ t('pw_reset_note')|safe }}</div></div>
+<div class="panel"><h2>🖥 {{ t('system_status') }}</h2><div id="sysInfo"></div></div></div></section>
+</main>
+{% endblock %}
+{% block scripts %}<script>window.ADMIN = {isServer: {{ is_server|tojson }}, canApprove: {{ can_approve|tojson }}};</script><script src="/static/vendor/chart.umd.js"></script><script src="/static/admin.js"></script>{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block page %}properties{% endblock %}
+{% block title %}{{ t('properties') }} · {{doc.name}}{% endblock %}
+{% block head %}<style>
+main{max-width:1100px;margin:20px auto;padding:0 14px}.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+h2{font-size:18px;margin:0 0 12px;overflow-wrap:anywhere}table.props{width:100%;border-collapse:collapse;font-size:14px}table.props td{padding:9px 10px;border-bottom:1px solid #e8edf2;vertical-align:top;overflow-wrap:anywhere}table.props td:first-child{width:210px;color:var(--muted)}
+.explain{font-size:12px;color:var(--muted);margin-top:3px}.warn{color:#92400e}.actions{margin-bottom:14px}.preview{height:72vh;margin-top:16px}
+</style>{% endblock %}
+{% block brand %}<h1>{{ t('doc_properties') }}</h1><div class="sub">Created by Victor Vetoshkin · {{host}}</div>{% endblock %}
+{% block head_right %}{% include "_user_header.html" %}<a class="head-link" href="/">← {{ t('catalog') }}</a>{% endblock %}
+{% block content %}
+<main><div class="actions" id="actions"></div><section class="card"><h2>{{doc.doc_name}}</h2><table class="props">
+{% for label,value in [(t('col_file'),doc.name),('Document name',doc.doc_name),(t('fld_description'),doc.description),(t('title_source'),t('src_' + doc.title_source)),(t('extension'),doc.extension),(t('col_size_bytes'),'{:,}'.format(doc.size).replace(',',' ')),(t('col_modified'),doc.modified.replace('T',' ')),(t('f_documentation'),doc.documentation),('RFQ',doc.rfq),(t('f_system'),doc.system),('UNIT',doc.unit),(t('rel_path'),doc.relative)] %}<tr><td>{{label}}</td><td style="white-space:pre-wrap">{{value or '—'}}</td></tr>{% endfor %}
+<tr><td>{{ t('unc_path') }}</td><td><b>{{doc.unc}}</b><div class="explain">{{ t('unc_explain') }}{% if not share %} <span class="warn">{{ t('unc_admin_share_warn') }}</span>{% endif %}</div></td></tr>
+<tr><td>{{ t('server_path') }}</td><td>{{doc.path}}<div class="explain">{{ t('server_path_explain') }}</div></td></tr>
+</table><div class="preview" id="box"></div></section></main>
+{% endblock %}
+{% block scripts %}<script>
+const doc = {{ doc|tojson }};
+const actions = document.getElementById('actions');
+actions.innerHTML = Portal.actionsHtml(doc); Portal.bindActions(actions, doc);
+Portal.startPresence(); Portal.setCurrentDoc(doc.doc_name || doc.name);
+Portal.preview(document.getElementById('box'), doc, {nolog: true});
+</script>{% endblock %}
